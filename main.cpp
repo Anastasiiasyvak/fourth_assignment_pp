@@ -1,9 +1,70 @@
 #include <iostream>
+#include <cstring>
+#include <cstdlib>
+#include <ctime>
 #include <fstream>
 #include <string>
 #include <stdexcept>
-
 using namespace std;
+
+class IReader;  //  прототипи
+class IWriter;
+
+int command = 0;
+int key, key1;
+string inputFilePath, outputFilePath, inputFilePath2, outputFilePath2;
+
+IReader* reader = nullptr;
+IWriter* writer = nullptr;
+
+char* encrypt(char* rawText, int key)
+{
+    int length = strlen(rawText);
+    char* result = new char[length + 1];
+
+    for (int i = 0; i < length; i++) {
+        char currentChar = rawText[i];
+        if (isupper(currentChar)) {
+            currentChar = char(int(currentChar + key - 65) % 26 + 65);
+        } else if (islower(currentChar)) {
+            currentChar = char(int(currentChar + key - 97) % 26 + 97);
+        }
+        result[i] = currentChar;
+    }
+
+    result[length] = '\0';
+
+    return result;
+}
+
+char* decrypt(char* encryptedText, int key1) {
+    int length = strlen(encryptedText);
+    char* result = new char[length + 1];
+
+    key1 = key1 % 26;
+
+    for (int i = 0; i < length; i++) {
+        char currentChar = encryptedText[i];
+        if (isupper(currentChar)) {
+            currentChar = char(int(currentChar - key1 - 65 + 26) % 26 + 65);
+        } else if (islower(currentChar)) {
+            currentChar = char(int(currentChar - key1 - 97 + 26) % 26 + 97);
+        }
+        result[i] = currentChar;
+    }
+
+    result[length] = '\0';
+
+    return result;
+}
+
+class SecretMode {
+public:
+    int generateRandomKey() {
+        srand(time(0));
+        return rand() % 26;
+    }
+};
 
 class IReader {
 public:
@@ -37,12 +98,6 @@ public:
 class FileWriter : public IWriter {
 public:
     virtual void write(const string& path, const string& content) override {
-        ifstream file(path);
-        if (file) {
-            file.close();
-            throw runtime_error("File already exists");
-        }
-
         ofstream outputFile(path);
         if (!outputFile) {
             throw runtime_error("Error opening the file for writing");
@@ -51,41 +106,115 @@ public:
     }
 };
 
-
 int main() {
-    string filePath;
-    int command;
+    SecretMode secretMode;
 
-    cout << "Choose the command:\n";
-    cout << "1 - Read file\n";
-    cout << "2 - Write to file\n";
-    cin >> command;
+    while (true) {
+        int mode = 0;
+        cout << "Choose the mode:\n";
+        cout << "1 - Normal Mode\n";
+        cout << "2 - Secret Mode\n";
+        cin >> mode;
+        cin.ignore();
 
-    if (command == 1) {
-        cout << "Enter the path to the file: ";
-        cin >> filePath;
-        IReader* reader = new FileReader();
-        try {
-            string fileContent = reader->read(filePath);
-            cout << "File content:\n" << fileContent;
-        } catch (const exception& exception) {
-            cerr << "Error: " << exception.what() << endl;
-        }
-    } else if (command == 2) {
-        cout << "Enter the path to the file: ";
-        cin >> filePath;
-        IWriter* writer = new FileWriter();
-        try {
-            cout << "Enter new content to write to the file: ";
-            string newContent;
-            cin.ignore();
-            getline(cin, newContent);
-            writer->write(filePath, newContent);
-            cout << "File has been updated with new content." << endl;
-        } catch (const exception& exception) {
-            cerr << "Error: " << exception.what() << endl;
+        switch (mode) {
+            case 1:
+                command = 0;
+                cout << "Choose the command:\n";
+                cout << "1 - Encrypt\n";
+                cout << "2 - Decrypt\n";
+                cin >> command;
+                cin.ignore();
+
+                switch (command) {
+                    case 1:
+                        cout << "Enter the path to the input file: ";
+                        cin >> inputFilePath;
+
+                        cout << "Enter the path to the output file: ";
+                        cin >> outputFilePath;
+
+                        reader = new FileReader();
+                        writer = new FileWriter();
+
+                        try {
+                            string fileContent = reader->read(inputFilePath);
+                            cout << "Enter your key: ";
+                            cin >> key;
+
+                            char* encryptedText = encrypt(const_cast<char*>(fileContent.c_str()), key);
+                            writer->write(outputFilePath, encryptedText);
+                            delete[] encryptedText;
+                            cout << "Encryption completed." << endl;
+                        } catch (const exception& exception) {
+                            cerr << "Error: " << exception.what() << endl;
+                        }
+                        delete reader;
+                        delete writer;
+                        break;
+
+                    case 2:
+                        cout << "Enter the path to the input file: ";
+                        cin >> inputFilePath2;
+
+                        cout << "Enter the path to the output file: ";
+                        cin >> outputFilePath2;
+
+                        reader = new FileReader();
+                        writer = new FileWriter();
+
+                        try {
+                            string fileContent = reader->read(inputFilePath2);
+                            cout << "Enter key for decrypting: ";
+                            cin >> key1;
+
+                            char* decryptedText = decrypt(const_cast<char*>(fileContent.c_str()), key1);
+                            writer->write(outputFilePath2, decryptedText);
+                            delete[] decryptedText;
+                            cout << "Decryption completed." << endl;
+                        } catch (const exception& exception) {
+                            cerr << "Error: " << exception.what() << endl;
+                        }
+                        delete reader;
+                        delete writer;
+                        break;
+
+                    default:
+                        cout << "Invalid command." << endl;
+                }
+                break;
+
+            case 2:
+                key = secretMode.generateRandomKey();
+                cout << "Generated key for secret mode: " << key << endl;
+                cout << "Enter the path to the input file: ";
+                cin >> inputFilePath;
+                cout << "Enter the path to the output file: ";
+                cin >> outputFilePath;
+                reader = new FileReader();
+                writer = new FileWriter();
+
+                try{
+                    string fileContent = reader->read(inputFilePath);
+                    char* encryptedText = encrypt(const_cast<char*>(fileContent.c_str()), key);
+                    writer->write(outputFilePath, encryptedText);
+                    delete[] encryptedText;
+                    cout << "Encryption completed." << endl;
+
+                } catch(const exception& exception) {
+                    cerr << "Error: " << exception.what() << endl;
+                }
+                delete reader;
+                delete writer;
+                break;
+
+            default:
+                cout << "Invalid mode." << endl;
+                break;
         }
     }
-
-    return 0;
 }
+
+
+
+

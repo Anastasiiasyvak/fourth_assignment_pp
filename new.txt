@@ -1,0 +1,12 @@
+Create a CLI which will allow user to enter the input path to an object they want to encrypt or
+decrypt. We want our program to work in two modes:
+1. Normal mode. This mode is used to test our application. User should be able to encrypt or
+decrypt the input file with specified key. This mode allows user to do the following steps:
+a. user choses type of operation: encrypt or decrypt
+b. user enters input file path
+c. user enters output file path
+d. user enters the key (in order to encrypt/decrypt the message)
+2. Secret mode. For this mode user can only encrypt file and the key should be generated
+randomly. This mode allows user to do the following steps:
+a. user enters input file path
+b. user enters output file path
