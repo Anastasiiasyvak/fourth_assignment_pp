@@ -1,0 +1,3 @@
+/home/nastia/CLionProjects/forth_assignment/cmake-build-debug/CMakeFiles/forth_assignment.dir
+/home/nastia/CLionProjects/forth_assignment/cmake-build-debug/CMakeFiles/edit_cache.dir
+/home/nastia/CLionProjects/forth_assignment/cmake-build-debug/CMakeFiles/rebuild_cache.dir
